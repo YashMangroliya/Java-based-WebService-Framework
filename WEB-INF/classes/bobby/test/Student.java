@@ -1,16 +1,20 @@
 package bobby.test;
 import com.thinking.machines.webRock.annotations.*;
 import com.thinking.machines.webRock.pojo.*;
-@InjectApplicationScope
+//@InjectApplicationScope
 @Path("/student")
 public class Student
 {
-private ApplicationScope applicationScope;
 private Item item;
-public void setApplicationScope(ApplicationScope applicationScope)
+
+@InjectRequestParameter(key="cd")
+public int code;
+public void setCode(int code)
 {
-this.applicationScope=applicationScope;
+this.code=code;
 }
+
+
 @Path("/getAllStudents")
 public String getAllStudents()
 {
@@ -20,13 +24,17 @@ return "allStudentData";
 //@POST
 @GET
 @Path("/add")
-public String add(@RequestParameter(key="cd") long code,@RequestParameter(key="nm") String name)
+public String add(RequestScope requestScope,@RequestParameter(key="nm") String name)
 {
 item=new Item();
-item.setCode(61);
-item.setName("Salt");
-applicationScope.setAttribute("item",item);
-return "Student added with code: "+code+" and Name: "+name;
+item.setCode(this.code);
+item.setName(name);
+if(requestScope!=null) requestScope.setAttribute("item",item);
+else
+{
+System.out.println("requestScope is null");
+}
+return "Student added with code: "+this.code+" and Name: "+name;
 }
 @OnStartup(priority=1)
 public void method1()

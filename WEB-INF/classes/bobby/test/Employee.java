@@ -23,8 +23,9 @@ return "all Employee's Data";
 }
 //@Forward("/index.html")
 @Path("/add")
-public String add()
+public String add(RequestScope requestScope)
 {
+item=(Item)requestScope.getAttribute("item");
 return "Employee added, Item  name: "+item.getName()+" , Item code: "+item.getCode();
 }
 @OnStartup(priority=1)

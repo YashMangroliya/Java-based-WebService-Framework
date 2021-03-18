@@ -56,6 +56,8 @@ System.out.println("5");
 Object serviceClassObject=serviceClass.newInstance();
 
 // checking for RequestParameters
+String primitiveTypeString;
+String keyString;
 Object requestParameters[];
 System.out.println("5.1");
 LinkedHashMap<String,Class> requestParameterMap=service.getRequestParameterMap();
@@ -67,20 +69,48 @@ System.out.println("5.3");
 Set<String> keySet=requestParameterMap.keySet();
 requestParameters=new Object[keySet.size()];
 System.out.println("5.4");
-String keyString;
 Iterator<String> itr=keySet.iterator();
 System.out.println("5.5");
 int integerValue;
 Object obj;
+ApplicationScope applicationScope=null;
+SessionScope sessionScope=null;
+RequestScope requestScope=null;
+ApplicationDirectory applicationDirectory=null;
 System.out.println("Size of set: "+keySet.size());
 for(int i=0;itr.hasNext();i++)
 {
-System.out.println("5.6");
 keyString=itr.next();
-System.out.println("5.7");
+// checking if the parameter is ApplicationScope/SessionScope/RequestScope/ApplicationDirectory
+if(keyString.equals("__applicationScope"))
+{
+if(applicationScope==null)  applicationScope=new ApplicationScope(servletContext);
+requestParameters[i]=applicationScope;
+continue;
+}
+if(keyString.equals("__sessionScope"))
+{
+if(sessionScope==null) sessionScope=new SessionScope(request.getSession());
+requestParameters[i]=sessionScope;
+continue;
+}
+if(keyString.equals("__requestScope"))
+{
+if(requestScope==null) requestScope=new RequestScope(request);
+requestParameters[i]=requestScope;
+continue;
+}
+if(keyString.equals("__applicationDirectory"))
+{
+if(applicationDirectory==null) applicationDirectory=new ApplicationDirectory(new File(servletContext.getRealPath("")));
+requestParameters[i]=applicationDirectory;
+continue;
+}
+
+// checking if the parameter is of primitive type
 if(requestParameterMap.get(keyString).isPrimitive())
 {
-String primitiveTypeString=requestParameterMap.get(keyString).toString();
+primitiveTypeString=requestParameterMap.get(keyString).toString();
 System.out.println(primitiveTypeString);
 System.out.println("5.7.1");
 if(primitiveTypeString.equalsIgnoreCase("int") || primitiveTypeString.equalsIgnoreCase("Integer"))
@@ -130,6 +160,7 @@ requestParameters[i]=request.getParameter(keyString);
 
 System.out.println("5.10");
 Class classes[]=new Class[1];
+
 // checking for IOC (INVERSE OF CONTROL)
 classes[0]=Class.forName("com.thinking.machines.webRock.pojo.ApplicationScope");
 if(service.getInjectApplicationScope() && serviceClass.getMethod("setApplicationScope",classes)!=null)
@@ -152,6 +183,7 @@ if(service.getInjectApplicationDirectory() && serviceClass.getMethod("setApplica
 serviceClass.getMethod("setApplicationDirectory",classes).invoke(serviceClassObject,new ApplicationDirectory(new File(servletContext.getRealPath(""))));
 }
 System.out.println("6");
+
 // checking for IOC (INVERSE OF CONTROL) Next Level
 
 List<AutoWiredProperty> autoWiredProperties;
@@ -165,9 +197,12 @@ for(AutoWiredProperty autoWiredProperty: autoWiredProperties)
 autoWiredPropertyName=autoWiredProperty.getName();
 autoWiredPropertyType=autoWiredProperty.getType();
 autoWiredPropertyTypeObject=request.getAttribute(autoWiredPropertyName);
+System.out.println("6.1.2");
 autoWiredPropertySetter=service.getServiceClass().getMethod("set"+autoWiredPropertyType.getSimpleName(),autoWiredPropertyType);
+System.out.println("6.2");
 if(autoWiredPropertyType!=null && autoWiredPropertyType.isInstance(autoWiredPropertyTypeObject))
 {
+System.out.println("6.3");
 autoWiredPropertySetter.invoke(serviceClassObject,autoWiredPropertyTypeObject);
 }
 else
@@ -192,10 +227,76 @@ autoWiredPropertySetter.invoke(serviceClassObject);
 }
 }
 
+System.out.println("7");
+
+// checking for InsertRequestParameters
+
+List<InjectRequestParameterPOJO> injectRequestParameters=service.getInjectRequestParameters();
+Method injectRequestParameterSetter;
+Class requestParameterType;
+System.out.println("7.1");
+System.out.println(injectRequestParameters==null);
+System.out.println(injectRequestParameters.size());
+for(InjectRequestParameterPOJO requestParameter: injectRequestParameters)
+{
+System.out.println("7.2");
+injectRequestParameterSetter=service.getServiceClass().getMethod("set"+(char)(requestParameter.getName().charAt(0)-32)+requestParameter.getName().substring(1),requestParameter.getType());
+requestParameterType=requestParameter.getType();
+keyString=requestParameter.getKey();
+if(requestParameterType.isPrimitive())
+{
+primitiveTypeString=requestParameterType.toString();
+System.out.println(primitiveTypeString);
+System.out.println("5.7.1.1");
+if(primitiveTypeString.equalsIgnoreCase("int") || primitiveTypeString.equalsIgnoreCase("Integer"))
+{
+System.out.println("5.7.2");
+System.out.println(request.getParameter(keyString));
+injectRequestParameterSetter.invoke(serviceClassObject,Integer.parseInt(request.getParameter(keyString)));
+}
+else if(primitiveTypeString.equalsIgnoreCase("long"))
+{
+System.out.println("5.7.3.3");
+System.out.println(request.getParameter(keyString));
+injectRequestParameterSetter.invoke(serviceClassObject,Long.parseLong(request.getParameter(keyString)));
+}
+else if(primitiveTypeString.equalsIgnoreCase("short"))
+{
+injectRequestParameterSetter.invoke(serviceClassObject,Short.parseShort(request.getParameter(keyString)));
+}
+else if(primitiveTypeString.equalsIgnoreCase("double"))
+{
+injectRequestParameterSetter.invoke(serviceClassObject,Double.parseDouble(request.getParameter(keyString)));
+}
+else if(primitiveTypeString.equalsIgnoreCase("float"))
+{
+injectRequestParameterSetter.invoke(serviceClassObject,Float.parseFloat(request.getParameter(keyString)));
+}
+else if(primitiveTypeString.equalsIgnoreCase("boolean"))
+{
+injectRequestParameterSetter.invoke(serviceClassObject,Boolean.parseBoolean(request.getParameter(keyString)));
+}
+else if(primitiveTypeString.equalsIgnoreCase("byte"))
+{
+injectRequestParameterSetter.invoke(serviceClassObject,Byte.parseByte(request.getParameter(keyString)));
+}
+else if(primitiveTypeString.equalsIgnoreCase("char"))
+{
+injectRequestParameterSetter.invoke(serviceClassObject,request.getParameter(keyString).charAt(0));
+}
+}
+else
+{
+System.out.println("5.9.9");
+injectRequestParameterSetter.invoke(serviceClassObject,request.getParameter(keyString));
+}
+}
+
 
 
 System.out.println("6");
 System.out.println("6.1");
+
 // checking for request forwarding
 String forwardTo=service.getForwardTo();
 if(forwardTo!=null)
@@ -204,8 +305,8 @@ System.out.println("6.2");
 if(map.containsKey(forwardTo))
 {
 System.out.println("6.3");
-if(requestParameters!=null) service.getService().invoke(serviceClassObject);
-else service.getService().invoke(serviceClassObject,requestParameters);
+if(requestParameters!=null) service.getService().invoke(serviceClassObject,requestParameters);
+else service.getService().invoke(serviceClassObject);
 System.out.println("6.4");
 service=map.get(forwardTo);
 String contextURI=request.getRequestURI();
@@ -226,12 +327,6 @@ requestDispatcher.forward(request,response);
 else
 {
 System.out.println("6.5");
-System.out.println(requestParameters!=null);
-System.out.println(service.getService().toString());
-System.out.println(requestParameters[0]);
-System.out.println(requestParameters[0] instanceof Integer);
-System.out.println(requestParameters[1]);
-System.out.println(requestParameters[1] instanceof String);
 if(requestParameters!=null) pw.println(service.getService().invoke(serviceClassObject,requestParameters));
 else pw.println(service.getService().invoke(serviceClassObject));
 pw.flush();

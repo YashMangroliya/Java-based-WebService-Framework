@@ -75,6 +75,7 @@ Class injectRequestScopeAnnotation=Class.forName("com.thinking.machines.webRock.
 Class injectSessionScopeAnnotation=Class.forName("com.thinking.machines.webRock.annotations.InjectSessionScope");
 Class injectApplicationDirectoryAnnotation=Class.forName("com.thinking.machines.webRock.annotations.InjectApplicationDirectory");
 Class autoWiredAnnotation=Class.forName("com.thinking.machines.webRock.annotations.AutoWired");
+Class injectRequestParameterAnnotation=Class.forName("com.thinking.machines.webRock.annotations.InjectRequestParameter");
 
 boolean injectApplicationScope,injectSessionScope,injectRequestScope,injectApplicationDirectory;
 String classAnnotationValue;
@@ -92,6 +93,7 @@ LinkedHashMap<String,Class> requestParameterMap;
 int numberOfParameters;
 Annotation requestParameterAnnotations[][];
 Class requestParameterTypes[];
+List<InjectRequestParameterPOJO> injectRequestParameters=new ArrayList<>();
 int j;
 for(File f:files)
 {
@@ -125,17 +127,28 @@ autoWiredProperty.setType(field.getType());
 autoWiredProperties.add(autoWiredProperty);
 System.out.println("Added "+field.getName()+"  in list");
 }
+if(field.getAnnotation(injectRequestParameterAnnotation)!=null)
+{
+System.out.println("Control came here 1");
+System.out.println("Control came here 1");
+System.out.println("Control came here 1");
+System.out.println("Control came here 1");
+injectRequestParameters.add(new InjectRequestParameterPOJO(field.getName(),field.getType(),((InjectRequestParameter)field.getAnnotation(injectRequestParameterAnnotation)).key()));
+}
 }
 System.out.println("Number of fields in class "+len);
 
 methods=c.getMethods();
 if(c.getAnnotation(pathAnnotation)!=null)
 {
+System.out.println("Control came here 2");
 classAnnotationValue=((Path)c.getAnnotation(pathAnnotation)).value();
 for(Method method: methods)
 {
+System.out.println("Control came here 3");
 if(method.getAnnotation(pathAnnotation)!=null)
 {
+System.out.println("Control came here 5");
 methodAnnotationValue=((Path)method.getAnnotation(pathAnnotation)).value();
 key=classAnnotationValue+methodAnnotationValue;
 service=new Service();
@@ -151,6 +164,12 @@ service.setInjectSessionScope(injectSessionScope);
 service.setInjectRequestScope(injectRequestScope);
 service.setInjectApplicationDirectory(injectApplicationDirectory);
 service.setAutoWiredProperties(autoWiredProperties);
+service.setInjectRequestParameters(injectRequestParameters);
+System.out.println("Checking if it is null: "+injectRequestParameters==null);
+System.out.println("Checking if it is null: "+injectRequestParameters==null);
+System.out.println("Checking if it is null: "+injectRequestParameters==null);
+System.out.println("Checking if it is null: "+injectRequestParameters==null);
+System.out.println("Checking size: "+injectRequestParameters.size());
 //checking for RequestParameters
 numberOfParameters=method.getParameterCount();
 if(numberOfParameters>0)
@@ -158,9 +177,29 @@ if(numberOfParameters>0)
 requestParameterMap=new LinkedHashMap<String,Class>();
 requestParameterAnnotations=method.getParameterAnnotations();
 requestParameterTypes=method.getParameterTypes();
+System.out.println("Number of parameters: "+numberOfParameters);
 for(j=0;j<numberOfParameters;j++)
 {
+if(requestParameterTypes[j].getSimpleName().equals("ApplicationScope"))
+{
+requestParameterMap.put("__applicationScope",requestParameterTypes[j]);
+}
+else if(requestParameterTypes[j].getSimpleName().equals("SessionScope"))
+{
+requestParameterMap.put("__sessionScope",requestParameterTypes[j]);
+}
+else if(requestParameterTypes[j].getSimpleName().equals("RequestScope"))
+{
+requestParameterMap.put("__requestScope",requestParameterTypes[j]);
+}
+else if(requestParameterTypes[j].getSimpleName().equals("ApplicationDirectory"))
+{
+requestParameterMap.put("__applicationDirectory",requestParameterTypes[j]);
+}
+else
+{
 requestParameterMap.put(((RequestParameter)requestParameterAnnotations[j][0]).key(),requestParameterTypes[j]);
+}
 }
 service.setRequestParameterMap(requestParameterMap);
 }
@@ -200,6 +239,7 @@ System.out.println("ERROR");
 System.out.println("ERROR");
 System.out.println("ERROR");
 System.out.println(e);
+System.out.println(e.getCause());
 System.out.println("ERROR");
 System.out.println("ERROR");
 System.out.println("ERROR");

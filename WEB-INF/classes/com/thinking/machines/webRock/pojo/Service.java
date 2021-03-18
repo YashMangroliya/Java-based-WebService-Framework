@@ -18,6 +18,7 @@ private boolean injectRequestScope;
 private boolean injectApplicationDirectory;
 private List<AutoWiredProperty> autoWiredProperties;
 private LinkedHashMap<String,Class> requestParameterMap;
+private List<InjectRequestParameterPOJO> injectRequestParameters;
 public Service()
 {
 serviceClass=null;
@@ -33,6 +34,8 @@ injectSessionScope=false;
 injectRequestScope=false;
 injectApplicationDirectory=false;
 requestParameterMap=null;
+autoWiredProperties=new ArrayList<AutoWiredProperty>();
+injectRequestParameters=new ArrayList<InjectRequestParameterPOJO>();
 }
 public void setServiceClass(Class serviceClass)
 {
@@ -145,5 +148,13 @@ this.requestParameterMap=requestParameterMap;
 public LinkedHashMap<String,Class> getRequestParameterMap()
 {
 return this.requestParameterMap;
+}
+public void setInjectRequestParameters(List<InjectRequestParameterPOJO> injectRequestParameters)
+{
+this.injectRequestParameters=injectRequestParameters;
+}
+public List<InjectRequestParameterPOJO> getInjectRequestParameters()
+{
+return this.injectRequestParameters;
 }
 }
