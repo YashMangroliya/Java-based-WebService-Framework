@@ -76,6 +76,7 @@ Class injectSessionScopeAnnotation=Class.forName("com.thinking.machines.webRock.
 Class injectApplicationDirectoryAnnotation=Class.forName("com.thinking.machines.webRock.annotations.InjectApplicationDirectory");
 Class autoWiredAnnotation=Class.forName("com.thinking.machines.webRock.annotations.AutoWired");
 Class injectRequestParameterAnnotation=Class.forName("com.thinking.machines.webRock.annotations.InjectRequestParameter");
+Class securedAccessAnnotation=Class.forName("com.thinking.machines.webRock.annotations.SecuredAccess");
 
 boolean injectApplicationScope,injectSessionScope,injectRequestScope,injectApplicationDirectory;
 String classAnnotationValue;
@@ -95,6 +96,10 @@ Annotation requestParameterAnnotations[][];
 Class requestParameterTypes[];
 List<InjectRequestParameterPOJO> injectRequestParameters=new ArrayList<>();
 int j;
+int classTypeParameterCount=0;
+int requestParameterCount=0;
+int scopeOrDirectoryParameterCount=0;
+SecuredAccess securedAccessAnnotationObject;
 for(File f:files)
 {
 if(f.isDirectory()) populateModel(f);
@@ -113,9 +118,11 @@ autoWiredProperties=new ArrayList<>();
 
 // making list of Auto wired properties
 
-fields=c.getFields();
+fields=c.getDeclaredFields();
 System.out.println(pathToFile);
 int len=0;
+
+// Iterating over fields
 for(Field field : fields)
 {
 len++;
@@ -138,17 +145,15 @@ injectRequestParameters.add(new InjectRequestParameterPOJO(field.getName(),field
 }
 System.out.println("Number of fields in class "+len);
 
+// Iterating over methods
 methods=c.getMethods();
 if(c.getAnnotation(pathAnnotation)!=null)
 {
-System.out.println("Control came here 2");
 classAnnotationValue=((Path)c.getAnnotation(pathAnnotation)).value();
 for(Method method: methods)
 {
-System.out.println("Control came here 3");
 if(method.getAnnotation(pathAnnotation)!=null)
 {
-System.out.println("Control came here 5");
 methodAnnotationValue=((Path)method.getAnnotation(pathAnnotation)).value();
 key=classAnnotationValue+methodAnnotationValue;
 service=new Service();
@@ -165,13 +170,12 @@ service.setInjectRequestScope(injectRequestScope);
 service.setInjectApplicationDirectory(injectApplicationDirectory);
 service.setAutoWiredProperties(autoWiredProperties);
 service.setInjectRequestParameters(injectRequestParameters);
-System.out.println("Checking if it is null: "+injectRequestParameters==null);
-System.out.println("Checking if it is null: "+injectRequestParameters==null);
-System.out.println("Checking if it is null: "+injectRequestParameters==null);
-System.out.println("Checking if it is null: "+injectRequestParameters==null);
-System.out.println("Checking size: "+injectRequestParameters.size());
+
 //checking for RequestParameters
 numberOfParameters=method.getParameterCount();
+classTypeParameterCount=0;
+requestParameterCount=0;
+scopeOrDirectoryParameterCount=0;
 if(numberOfParameters>0)
 {
 requestParameterMap=new LinkedHashMap<String,Class>();
@@ -183,29 +187,59 @@ for(j=0;j<numberOfParameters;j++)
 if(requestParameterTypes[j].getSimpleName().equals("ApplicationScope"))
 {
 requestParameterMap.put("__applicationScope",requestParameterTypes[j]);
+scopeOrDirectoryParameterCount++;
 }
 else if(requestParameterTypes[j].getSimpleName().equals("SessionScope"))
 {
 requestParameterMap.put("__sessionScope",requestParameterTypes[j]);
+scopeOrDirectoryParameterCount++;
 }
 else if(requestParameterTypes[j].getSimpleName().equals("RequestScope"))
 {
 requestParameterMap.put("__requestScope",requestParameterTypes[j]);
+scopeOrDirectoryParameterCount++;
 }
 else if(requestParameterTypes[j].getSimpleName().equals("ApplicationDirectory"))
 {
 requestParameterMap.put("__applicationDirectory",requestParameterTypes[j]);
+scopeOrDirectoryParameterCount++;
+}
+else if(requestParameterTypes[j].isPrimitive()==false && requestParameterTypes[j].getSimpleName().equals("String")==false)
+{
+requestParameterMap.put("__json",requestParameterTypes[j]);
+classTypeParameterCount++;
 }
 else
 {
 requestParameterMap.put(((RequestParameter)requestParameterAnnotations[j][0]).key(),requestParameterTypes[j]);
+requestParameterCount++;
 }
+}
+if(classTypeParameterCount>1 ||  (classTypeParameterCount==1 && requestParameterCount>0) ||  (classTypeParameterCount==1 &&  (classTypeParameterCount+scopeOrDirectoryParameterCount)!=numberOfParameters))
+{
+System.out.println("classTypeParameterCount: "+classTypeParameterCount);
+System.out.println("scopeOrDirectoryParameterCount: "+scopeOrDirectoryParameterCount);
+System.out.println("requestParameterCount"+requestParameterCount);
+throw new Exception("Parameter types of method "+method.getName()+" are malformed");
 }
 service.setRequestParameterMap(requestParameterMap);
 }
 else
 {
 service.setRequestParameterMap(null);
+}
+
+// checking Secured Access
+securedAccessAnnotationObject=(SecuredAccess)method.getAnnotation(securedAccessAnnotation);
+if(securedAccessAnnotationObject==null)
+{
+securedAccessAnnotationObject=(SecuredAccess) service.getServiceClass().getAnnotation(securedAccessAnnotation);
+}
+if(securedAccessAnnotationObject!=null)
+{
+service.setSecuredAccess(true);
+service.setCheckPost(securedAccessAnnotationObject.checkPost());
+service.setGuard(securedAccessAnnotationObject.guard());
 }
 this.webRockModel.addToMap(key,service);
 }// if

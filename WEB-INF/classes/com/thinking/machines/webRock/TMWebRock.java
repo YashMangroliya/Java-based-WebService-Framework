@@ -4,9 +4,11 @@ import javax.servlet.*;
 import java.util.*;
 import java.io.*;
 import java.lang.reflect.*;
+import com.google.gson.*;
 import com.thinking.machines.webRock.pojo.*;
 import com.thinking.machines.webRock.model.*;
 import com.thinking.machines.webRock.annotations.*;
+import com.thinking.machines.webRock.exceptions.*;
 public class TMWebRock extends HttpServlet
 {
 
@@ -53,7 +55,77 @@ response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 return;
 }
 System.out.println("5");
+
 Object serviceClassObject=serviceClass.newInstance();
+
+ApplicationScope applicationScope=null;
+SessionScope sessionScope=null;
+RequestScope requestScope=null;
+ApplicationDirectory applicationDirectory=null;
+
+// checking for Secured Access
+if(service.getSecuredAccess())
+{
+Class checkPostClass=Class.forName(service.getCheckPost());
+Method guardMethod=null;
+String guard=service.getGuard();
+Object guardParameters[]=null;
+int numberOfParametersInGuard;
+Class parameterTypesInGuard[];
+String parameterTypeString;
+for(Method method : checkPostClass.getMethods())
+{
+if(method.getName().equals(guard))
+{
+guardMethod=method;
+numberOfParametersInGuard=method.getParameterCount();
+guardParameters=new Object[numberOfParametersInGuard];
+parameterTypesInGuard=method.getParameterTypes();
+for(int i=0;i<numberOfParametersInGuard;i++)
+{
+parameterTypeString=parameterTypesInGuard[i].getSimpleName();
+if(parameterTypeString.equals("ApplicationScope"))
+{
+if(applicationScope==null) applicationScope=new ApplicationScope(servletContext);
+guardParameters[i]=applicationScope;
+}
+else if(parameterTypeString.equals("SessionScope"))
+{
+if(sessionScope==null) sessionScope=new SessionScope(request.getSession());
+guardParameters[i]=sessionScope;
+}
+else if(parameterTypeString.equals("RequestScope"))
+{
+if(requestScope==null) requestScope=new RequestScope(request);
+guardParameters[i]=requestScope;
+}
+else if(parameterTypeString.equals("ApplicationDirectory"))
+{
+if(applicationDirectory==null) applicationDirectory=new ApplicationDirectory(new File(servletContext.getRealPath("")));
+guardParameters[i]=applicationDirectory;
+}
+else throw new Exception("Parameters in guard method are malformed");
+} // for
+break;
+}  //if
+} //for
+if(guardMethod!=null)
+{
+System.out.println("Control reached here");
+try{
+guardMethod.invoke(checkPostClass.newInstance(),guardParameters);
+}catch(InvocationTargetException invocationTargetException)
+{
+System.out.println("guard sent exception : "+invocationTargetException);
+System.out.println("with cause : "+invocationTargetException.getCause());
+response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+return;
+}
+System.out.println("Control reached here2");
+}
+} // if
+
+
 
 // checking for RequestParameters
 String primitiveTypeString;
@@ -73,14 +145,30 @@ Iterator<String> itr=keySet.iterator();
 System.out.println("5.5");
 int integerValue;
 Object obj;
-ApplicationScope applicationScope=null;
-SessionScope sessionScope=null;
-RequestScope requestScope=null;
-ApplicationDirectory applicationDirectory=null;
 System.out.println("Size of set: "+keySet.size());
 for(int i=0;itr.hasNext();i++)
 {
 keyString=itr.next();
+if(keyString.equals("__json"))
+{
+System.out.println("JSON Found");
+// declaring here because we know that this if condition will get executed only once
+BufferedReader bufferedReader=request.getReader();
+StringBuffer stringBuffer=new StringBuffer();
+String b;
+String rawString;
+while(true)
+{
+b=bufferedReader.readLine();
+if(b==null) break;
+stringBuffer.append(b);
+}
+rawString=stringBuffer.toString();
+System.out.println(rawString);
+Gson gson=new Gson();
+requestParameters[i]=gson.fromJson(rawString,requestParameterMap.get(keyString));
+continue;
+}
 // checking if the parameter is ApplicationScope/SessionScope/RequestScope/ApplicationDirectory
 if(keyString.equals("__applicationScope"))
 {
@@ -349,6 +437,8 @@ System.out.println("doPost of TMWebRock got called");
 System.out.println("doPost of TMWebRock got called");
 System.out.println("doPost of TMWebRock got called");
 System.out.println("doPost of TMWebRock got called");
+doGet(request,response);
+/*
 try{
 PrintWriter pw=response.getWriter();
 WebRockModel webRockModel;
@@ -378,5 +468,6 @@ pw.flush();
 {
 System.out.println(e);
 }
+*/
 }
 }

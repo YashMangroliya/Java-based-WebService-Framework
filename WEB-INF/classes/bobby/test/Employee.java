@@ -4,6 +4,7 @@ import com.thinking.machines.webRock.pojo.*;
 @Path("/employee")
 public class Employee
 {
+/*
 @AutoWired(name="item")
 public Item item;
 public void setItem(Item item)
@@ -14,9 +15,10 @@ public Item getItem()
 {
 return this.item;
 }
-
-@Forward("/student/add")
-@Path("/getAll")
+*/
+//@Forward("/student/add")
+@SecuredAccess(checkPost="bobby.test.Security",guard="guard")
+@Path("/getAllEmployees")
 public String getAllEmployees()
 {
 return "all Employee's Data";
@@ -25,12 +27,13 @@ return "all Employee's Data";
 @Path("/add")
 public String add(RequestScope requestScope)
 {
-item=(Item)requestScope.getAttribute("item");
-return "Employee added, Item  name: "+item.getName()+" , Item code: "+item.getCode();
+//item=(Item)requestScope.getAttribute("item");
+//return "Employee added, Item  name: "+item.getName()+" , Item code: "+item.getCode();
+return "Employee added";
 }
 @OnStartup(priority=1)
 public void method1()
-{
+{ 
 System.out.println("1 of Employee");
 System.out.println("1 of Employee");
 System.out.println("1 of Employee");

@@ -1,76 +1,37 @@
 package bobby.test;
-import com.thinking.machines.webRock.annotations.*;
-import com.thinking.machines.webRock.pojo.*;
-//@InjectApplicationScope
-@Path("/student")
 public class Student
 {
-private Item item;
-
-@InjectRequestParameter(key="cd")
-public int code;
-public void setCode(int code)
+private int rollNumber;
+private String name;
+private char gender;
+public Student(int rollNumber,String name,char gender)
 {
-this.code=code;
+this.rollNumber=rollNumber;
+this.name=name;
+this.gender=gender;
 }
-
-
-@Path("/getAllStudents")
-public String getAllStudents()
+public void setRollNumber(int rollNumber)
 {
-return "allStudentData";
+this.rollNumber=rollNumber;
 }
-//@Forward("/employee/add")
-//@POST
-@GET
-@Path("/add")
-public String add(RequestScope requestScope,@RequestParameter(key="nm") String name)
+public int getRollNumber()
 {
-item=new Item();
-item.setCode(this.code);
-item.setName(name);
-if(requestScope!=null) requestScope.setAttribute("item",item);
-else
-{
-System.out.println("requestScope is null");
+return this.rollNumber;
 }
-return "Student added with code: "+this.code+" and Name: "+name;
-}
-@OnStartup(priority=1)
-public void method1()
+public void setName(String name)
 {
-System.out.println("1");
-System.out.println("1");
-System.out.println("1");
-System.out.println("1");
-System.out.println("1");
-System.out.println("1");
-System.out.println("1");
+this.name=name;
 }
-@OnStartup(priority=3)
-public void method3()
+public String getName()
 {
-System.out.println("3");
-System.out.println("3");
-System.out.println("3");
-System.out.println("3");
-System.out.println("3");
-System.out.println("3");
-System.out.println("3");
-System.out.println("3");
+return this.name;
 }
-@OnStartup(priority=2)
-public void method2()
+public void setGender(char gender)
 {
-System.out.println("2");
-System.out.println("2");
-System.out.println("2");
-System.out.println("2");
-System.out.println("2");
-System.out.println("2");
-System.out.println("2");
-System.out.println("2");
-System.out.println("2");
-System.out.println("2");
+this.gender=gender;
+}
+public char getGender()
+{
+return this.gender;
 }
 }

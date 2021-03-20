@@ -19,6 +19,9 @@ private boolean injectApplicationDirectory;
 private List<AutoWiredProperty> autoWiredProperties;
 private LinkedHashMap<String,Class> requestParameterMap;
 private List<InjectRequestParameterPOJO> injectRequestParameters;
+private boolean securedAccess;
+private String checkPost;
+private String guard;
 public Service()
 {
 serviceClass=null;
@@ -36,6 +39,9 @@ injectApplicationDirectory=false;
 requestParameterMap=null;
 autoWiredProperties=new ArrayList<AutoWiredProperty>();
 injectRequestParameters=new ArrayList<InjectRequestParameterPOJO>();
+securedAccess=false;
+checkPost="";
+guard="";
 }
 public void setServiceClass(Class serviceClass)
 {
@@ -156,5 +162,29 @@ this.injectRequestParameters=injectRequestParameters;
 public List<InjectRequestParameterPOJO> getInjectRequestParameters()
 {
 return this.injectRequestParameters;
+}
+public void setSecuredAccess(boolean securedAccess)
+{
+this.securedAccess=securedAccess;
+}
+public boolean getSecuredAccess()
+{
+return this.securedAccess;
+}
+public void setCheckPost(String checkPost)
+{
+this.checkPost=checkPost;
+}
+public String getCheckPost()
+{
+return this.checkPost;
+}
+public void setGuard(String guard)
+{
+this.guard=guard;
+}
+public String getGuard()
+{
+return this.guard;
 }
 }
