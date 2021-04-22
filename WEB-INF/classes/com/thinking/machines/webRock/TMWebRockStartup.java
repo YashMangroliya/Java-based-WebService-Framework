@@ -32,11 +32,23 @@ System.out.println("");
 String servicePackagePrefix=servletConfig.getInitParameter("SERVICE_PACKAGE_PRIFIX");
 String path=getServletContext().getRealPath("/WEB-INF/classes/")+servicePackagePrefix;
 this.pathToClasses=getServletContext().getRealPath("/WEB-INF/classes/");
+try{
 File file=new File(path);
 populateModel(file);
+File jsFile=new File(getServletContext().getRealPath("/WEB-INF/js/"+getInitParameter("JsFile")));
+File tmpFile=new File(getServletContext().getRealPath("/WEB-INF/js/tmp.tmp"));
+RandomAccessFile randomAccessFile=new RandomAccessFile(jsFile,"rw");
+RandomAccessFile tmpRandomAccessFile=new RandomAccessFile(tmpFile,"rw");
+
+tmpRandomAccessFile.seek(0);
+long lengthOfFile=tmpRandomAccessFile.length()+randomAccessFile.length();
+randomAccessFile.seek(randomAccessFile.length());
+while(randomAccessFile.length()<lengthOfFile) randomAccessFile.writeBytes(tmpRandomAccessFile.readLine()+"\r\n");
+randomAccessFile.close();
+tmpRandomAccessFile.setLength(0);
+tmpRandomAccessFile.close();
 getServletContext().setAttribute("webRockModel",this.webRockModel);
 System.out.println("StartupServices size: "+this.startupServices.size());
-try{
 for(Service s: this.startupServices)
 {
 System.out.println("Priority: "+s.getPriority());
@@ -76,11 +88,12 @@ Class injectSessionScopeAnnotation=Class.forName("com.thinking.machines.webRock.
 Class injectApplicationDirectoryAnnotation=Class.forName("com.thinking.machines.webRock.annotations.InjectApplicationDirectory");
 Class autoWiredAnnotation=Class.forName("com.thinking.machines.webRock.annotations.AutoWired");
 Class injectRequestParameterAnnotation=Class.forName("com.thinking.machines.webRock.annotations.InjectRequestParameter");
+Class requestParameterAnnotation=Class.forName("com.thinking.machines.webRock.annotations.RequestParameter");
 Class securedAccessAnnotation=Class.forName("com.thinking.machines.webRock.annotations.SecuredAccess");
 
 boolean injectApplicationScope,injectSessionScope,injectRequestScope,injectApplicationDirectory;
-String classAnnotationValue;
-String methodAnnotationValue;
+String classPathAnnotationValue;
+String methodPathAnnotationValue;
 Class c;
 Method methods[];
 String key="";
@@ -90,7 +103,7 @@ int priority;
 List<AutoWiredProperty> autoWiredProperties;
 AutoWiredProperty autoWiredProperty;
 Field fields[];
-LinkedHashMap<String,Class> requestParameterMap;
+LinkedHashMap<String,Class> requestParameterMap=null;
 int numberOfParameters;
 Annotation requestParameterAnnotations[][];
 Class requestParameterTypes[];
@@ -100,6 +113,29 @@ int classTypeParameterCount=0;
 int requestParameterCount=0;
 int scopeOrDirectoryParameterCount=0;
 SecuredAccess securedAccessAnnotationObject;
+
+// js file generation
+Class requestParameterType;
+Field pojoFields[];
+String typeName;
+Set<Class> pojoSet=new LinkedHashSet<>();
+File jsFile=new File(getServletContext().getRealPath("/WEB-INF/js/"+getInitParameter("JsFile")));
+if(!jsFile.exists()) jsFile.createNewFile();
+RandomAccessFile randomAccessFile=new RandomAccessFile(jsFile,"rw");
+Collection<java.lang.String> mappings=null;
+String urlPattern="";
+// to get url-pattern against TMWebRock starts here
+ServletContext servletContext = getServletContext();
+ServletRegistration servletRegistration = servletContext.getServletRegistration("TMWebRock");
+mappings = servletRegistration.getMappings();
+// to get url-pattern against TMWebRock ends here
+
+File tmpFile=new File(getServletContext().getRealPath("/WEB-INF/js/tmp.tmp"));
+if(tmpFile.exists()) tmpFile.delete();
+tmpFile.createNewFile();
+RandomAccessFile tmpRandomAccessFile=new RandomAccessFile(tmpFile,"rw");
+
+
 for(File f:files)
 {
 if(f.isDirectory()) populateModel(f);
@@ -132,30 +168,28 @@ autoWiredProperty=new AutoWiredProperty();
 autoWiredProperty.setName(((AutoWired)field.getAnnotation(autoWiredAnnotation)).name());
 autoWiredProperty.setType(field.getType());
 autoWiredProperties.add(autoWiredProperty);
-System.out.println("Added "+field.getName()+"  in list");
 }
 if(field.getAnnotation(injectRequestParameterAnnotation)!=null)
 {
-System.out.println("Control came here 1");
-System.out.println("Control came here 1");
-System.out.println("Control came here 1");
-System.out.println("Control came here 1");
 injectRequestParameters.add(new InjectRequestParameterPOJO(field.getName(),field.getType(),((InjectRequestParameter)field.getAnnotation(injectRequestParameterAnnotation)).key()));
 }
-}
-System.out.println("Number of fields in class "+len);
-
+} 
 // Iterating over methods
 methods=c.getMethods();
 if(c.getAnnotation(pathAnnotation)!=null)
 {
-classAnnotationValue=((Path)c.getAnnotation(pathAnnotation)).value();
+// js file generation starts here
+tmpRandomAccessFile.writeBytes("class "+c.getSimpleName()+"{\r\n");
+
+// js file generation ends here
+classPathAnnotationValue=((Path)c.getAnnotation(pathAnnotation)).value();
 for(Method method: methods)
 {
 if(method.getAnnotation(pathAnnotation)!=null)
 {
-methodAnnotationValue=((Path)method.getAnnotation(pathAnnotation)).value();
-key=classAnnotationValue+methodAnnotationValue;
+tmpRandomAccessFile.writeBytes(method.getName()+"(");
+methodPathAnnotationValue=((Path)method.getAnnotation(pathAnnotation)).value();
+key=classPathAnnotationValue+methodPathAnnotationValue;
 service=new Service();
 service.setServiceClass(c);
 service.setService(method);
@@ -176,12 +210,28 @@ numberOfParameters=method.getParameterCount();
 classTypeParameterCount=0;
 requestParameterCount=0;
 scopeOrDirectoryParameterCount=0;
+/*if(numberOfParameters==0) 
+{
+tmpRandomAccessFile.writeBytes(")\r\n{\r\n");
+tmpRandomAccessFile.writeBytes("var prm=new Promise(function(resolve,reject){\r\n");
+tmpRandomAccessFile.writeBytes("});\r\nreturn prm;\r\n}\r\n");
+}*/
 if(numberOfParameters>0)
 {
 requestParameterMap=new LinkedHashMap<String,Class>();
 requestParameterAnnotations=method.getParameterAnnotations();
 requestParameterTypes=method.getParameterTypes();
 System.out.println("Number of parameters: "+numberOfParameters);
+//int ii=1;
+/*
+for(Parameter p: method.getParameters())
+{
+tmpRandomAccessFile.writeBytes(p.getName());
+if(ii!=numberOfParameters) tmpRandomAccessFile.writeBytes(",");
+ii++;
+}
+*/
+
 for(j=0;j<numberOfParameters;j++)
 {
 if(requestParameterTypes[j].getSimpleName().equals("ApplicationScope"))
@@ -206,15 +256,45 @@ scopeOrDirectoryParameterCount++;
 }
 else if(requestParameterTypes[j].isPrimitive()==false && requestParameterTypes[j].getSimpleName().equals("String")==false)
 {
+requestParameterType=requestParameterTypes[j];
 requestParameterMap.put("__json",requestParameterTypes[j]);
 classTypeParameterCount++;
+// for tmp.tmp
+tmpRandomAccessFile.writeBytes((char)(requestParameterType.getSimpleName().charAt(0)+32)+requestParameterType.getSimpleName().substring(1));
+if(j!=(numberOfParameters-1)) tmpRandomAccessFile.writeBytes(",");
+
+
+// for abcd.js
+if(pojoSet.contains(requestParameterType)==false)
+{
+pojoSet.add(requestParameterType);
+randomAccessFile.writeBytes("class "+requestParameterType.getSimpleName()+"\r\n{\r\nconstructor()\r\n{\r\n");
+pojoFields=requestParameterType.getDeclaredFields();
+Field field;
+for(int i=0;i<pojoFields.length;i++)
+{
+field=pojoFields[i];
+randomAccessFile.writeBytes("this."+field.getName()+"=");
+typeName=field.getType().getTypeName();
+if(typeName=="int" || typeName=="short" || typeName=="long" || typeName=="float" || typeName=="double") randomAccessFile.writeBytes("0");
+else if(typeName=="char") randomAccessFile.writeBytes("''");
+else if(typeName=="String" || typeName=="java.lang.String") randomAccessFile.writeBytes("\"\"");
+else randomAccessFile.writeBytes("null");
+randomAccessFile.writeBytes(";\r\n");
+}
+randomAccessFile.writeBytes("}\r\n}\r\n");
+}
+// done done
 }
 else
 {
 requestParameterMap.put(((RequestParameter)requestParameterAnnotations[j][0]).key(),requestParameterTypes[j]);
 requestParameterCount++;
+tmpRandomAccessFile.writeBytes(((RequestParameter)requestParameterAnnotations[j][0]).key());
+if(j!=(numberOfParameters-1)) tmpRandomAccessFile.writeBytes(",");
 }
 }
+
 if(classTypeParameterCount>1 ||  (classTypeParameterCount==1 && requestParameterCount>0) ||  (classTypeParameterCount==1 &&  (classTypeParameterCount+scopeOrDirectoryParameterCount)!=numberOfParameters))
 {
 System.out.println("classTypeParameterCount: "+classTypeParameterCount);
@@ -228,6 +308,59 @@ else
 {
 service.setRequestParameterMap(null);
 }
+tmpRandomAccessFile.writeBytes(")\r\n{\r\n");
+tmpRandomAccessFile.writeBytes("var prm=new Promise(function(resolve,reject){\r\n");
+
+Set<String> keySet=requestParameterMap.keySet();
+Class val;
+String queryString="";
+int ii=0;
+String keyForQueryString="DEFAULT_VALUE";
+for(String key2:keySet)
+{
+keyForQueryString=key2;
+if(ii!=0) queryString+="&";
+ii++;
+if(key2=="__applicationScope" || key2=="__sessionScope" || key2=="__requestScope" || key2=="__applicationDirectory") continue;
+val=requestParameterMap.get(key2);
+if(val.getSimpleName()=="int" || val.getSimpleName()=="Integer")
+{
+tmpRandomAccessFile.writeBytes("if((Number.isInteger("+key2+"))==false)\r\n{\r\nreject(\"int should be passed to "+method.getName()+" method\");\r\nreturn;\r\n}\r\n");
+queryString=queryString+key2+"=\"+encodeURI("+key2+")";
+}
+else if(val.getSimpleName()=="String" || val.getSimpleName()=="java.lang.String")
+{
+tmpRandomAccessFile.writeBytes("if("+key2+" instanceof String)==false)\r\n{\r\nreject(\"String should be passed to "+method.getName()+" method\");\r\nreturn;\r\n}\r\n");
+queryString=queryString+key2+"=\"+encodeURI("+key2+")";
+}
+else if(val.isPrimitive()==false)
+{
+keyForQueryString=(char)(val.getSimpleName().charAt(0)+32)+val.getSimpleName().substring(1);
+tmpRandomAccessFile.writeBytes("if(("+(char)(val.getSimpleName().charAt(0)+32)+val.getSimpleName().substring(1)+" instanceof "+val.getSimpleName()+")==false)\r\n{\r\n");
+tmpRandomAccessFile.writeBytes("reject(\"instance of "+val.getSimpleName()+" class should be passed to "+method.getName()+" method\");\r\nreturn;\r\n}\r\n");
+}
+}
+
+
+if(urlPattern.length()==0)for(String s: mappings) urlPattern=s;
+if(service.getIsGetAllowed())
+{
+// done
+if(queryString.length()!=0)tmpRandomAccessFile.writeBytes("$.get(\""+urlPattern.substring(0,urlPattern.length()-2)+classPathAnnotationValue+methodPathAnnotationValue+"?"+queryString+",function(data,status){\r\n");
+else tmpRandomAccessFile.writeBytes("$.get(\""+urlPattern.substring(0,urlPattern.length()-2)+classPathAnnotationValue+methodPathAnnotationValue+",function(data,status){\r\n");
+}
+else if(service.getIsPostAllowed())
+{
+tmpRandomAccessFile.writeBytes("$.post(\""+urlPattern.substring(0,urlPattern.length()-2)+classPathAnnotationValue+methodPathAnnotationValue+"\",JSON.stringify("+keyForQueryString+"),function(data,status){\r\n");
+}
+tmpRandomAccessFile.writeBytes("if(status!=\"success\")\r\n{\r\n");
+tmpRandomAccessFile.writeBytes("reject(\"Some error occured\");\r\nreturn;\r\n}\r\n");
+tmpRandomAccessFile.writeBytes("if(data==null)\r\n{\r\nreject(\"Some error occured\");\r\nreturn;\r\n}\r\n");
+tmpRandomAccessFile.writeBytes("if(data.isSuccessful==false)\r\n{\r\nreject(data.exception);\r\nreturn;\r\n}\r\n");
+tmpRandomAccessFile.writeBytes("resolve(data.response);\r\n");
+tmpRandomAccessFile.writeBytes("},\"json\");\r\n");
+tmpRandomAccessFile.writeBytes("});\r\nreturn prm;\r\n}\r\n");
+
 
 // checking Secured Access
 securedAccessAnnotationObject=(SecuredAccess)method.getAnnotation(securedAccessAnnotation);
@@ -244,6 +377,7 @@ service.setGuard(securedAccessAnnotationObject.guard());
 this.webRockModel.addToMap(key,service);
 }// if
 } //for
+tmpRandomAccessFile.writeBytes("}\r\n");
 } // if
 for(Method method: methods)
 {
@@ -262,6 +396,7 @@ addToStartupServices(service);
 }
 }
 }
+
 }catch(Exception e)
 {
 System.out.println("ERROR");

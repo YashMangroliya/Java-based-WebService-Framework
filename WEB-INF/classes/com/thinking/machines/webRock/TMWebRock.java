@@ -25,9 +25,11 @@ System.out.println("doGet of TMWebRock got called");
 System.out.println("doGet of TMWebRock got called");
 System.out.println("doGet of TMWebRock got called");
 System.out.println("doGet of TMWebRock got called"+request.getRequestURI());
+PrintWriter pw=null;
+Gson gson=null;
 try{
+pw=response.getWriter();
 System.out.println("1");
-PrintWriter pw=response.getWriter();
 ServletContext servletContext=getServletContext();
 WebRockModel webRockModel;
 String key,methodType;
@@ -46,6 +48,7 @@ HashMap<String,Service> map=webRockModel.getMap();
 service=map.get(key);
 serviceClass=service.getServiceClass();
 serviceMethod=service.getService();
+gson=new Gson();
 
 // checking method type of request (GET/POST)
 System.out.println("4");
@@ -165,7 +168,6 @@ stringBuffer.append(b);
 }
 rawString=stringBuffer.toString();
 System.out.println(rawString);
-Gson gson=new Gson();
 requestParameters[i]=gson.fromJson(rawString,requestParameterMap.get(keyString));
 continue;
 }
@@ -204,6 +206,7 @@ System.out.println("5.7.1");
 if(primitiveTypeString.equalsIgnoreCase("int") || primitiveTypeString.equalsIgnoreCase("Integer"))
 {
 System.out.println("5.7.2");
+System.out.println(keyString);
 System.out.println(request.getParameter(keyString));
 requestParameters[i]=Integer.parseInt(request.getParameter(keyString));
 }
@@ -415,8 +418,17 @@ requestDispatcher.forward(request,response);
 else
 {
 System.out.println("6.5");
-if(requestParameters!=null) pw.println(service.getService().invoke(serviceClassObject,requestParameters));
-else pw.println(service.getService().invoke(serviceClassObject));
+ServiceResponse serviceResponse=new ServiceResponse();
+serviceResponse.setIsSuccessful(true);
+if(requestParameters!=null)
+{
+serviceResponse.setResponse(service.getService().invoke(serviceClassObject,requestParameters));
+}
+else
+{
+serviceResponse.setResponse(service.getService().invoke(serviceClassObject));
+}
+pw.println(gson.toJson(serviceResponse));
 pw.flush();
 }
 System.out.println("7");
@@ -424,6 +436,11 @@ System.out.println("7");
 {
 System.out.println(e+" "+request.getRequestURI());
 System.out.println(e.getCause());
+ServiceResponse serviceResponse=new ServiceResponse();
+serviceResponse.setIsSuccessful(false);
+serviceResponse.setException(e.getCause().toString());
+pw.println(gson.toJson(serviceResponse));
+pw.flush();
 }
 }
 public void doPost(HttpServletRequest request,HttpServletResponse response)
@@ -462,11 +479,19 @@ if(!service.getIsPostAllowed() && service.getIsGetAllowed())
 response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 return;
 }
-pw.println(service.getService().invoke(service.getServiceClass().newInstance()));
+ServiceResponse serviceResponse=new ServiceResponse();
+serviceResponse.setIsSuccessful(true);
+serviceResponse.setResponse(service.getService().invoke(service.getServiceClass().newInstance()));
+pw.println(gson.toJson(serviceResponse));
 pw.flush();
 }catch(Exception e)
 {
 System.out.println(e);
+ServiceResponse serviceResponse=new ServiceResponse();
+serviceResponse.setIsSuccessful(false);
+serviceResponse.setException(e.getMessage());
+pw.println(gson.toJson(serviceResponse));
+pw.flush();
 }
 */
 }

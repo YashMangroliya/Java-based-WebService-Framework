@@ -5,13 +5,14 @@ import com.thinking.machines.webRock.annotations.*;
 @Path("/student")
 public class StudentService
 {
+@POST
 @Path("/add")
 public void add(Student student) throws Exception
 {
 Connection connection=DAOConnection.getConnection();
 PreparedStatement preparedStatement;
 preparedStatement=connection.prepareStatement("select rollNumber from Student where rollNumber=?");
-preparedStatement.setInt(student.getRollNumber(),1);
+preparedStatement.setInt(1,student.getRollNumber());
 ResultSet resultSet;
 resultSet=preparedStatement.executeQuery();
 if(resultSet.next())
@@ -31,6 +32,7 @@ preparedStatement.executeUpdate();
 preparedStatement.close();
 connection.close();
 }
+@GET
 @Path("/getAll")
 public List<Student> getAll() throws Exception
 {
@@ -49,6 +51,7 @@ preparedStatement.close();
 connection.close();
 return list;
 }
+@POST
 @Path("/update")
 public void update(Student student) throws Exception
 {
@@ -72,9 +75,11 @@ preparedStatement.executeUpdate();
 preparedStatement.close();
 connection.close();
 }
+@POST
 @Path("/delete")
 public void delete(@RequestParameter(key="rollNumber") int rollNumber) throws Exception
 {
+System.out.println("delete function called with roll number: "+rollNumber);
 Connection connection=DAOConnection.getConnection();
 PreparedStatement preparedStatement=connection.prepareStatement("select rollNumber from Student where rollNumber=?");
 preparedStatement.setInt(1,rollNumber);
@@ -94,6 +99,7 @@ preparedStatement.executeUpdate();
 preparedStatement.close();
 connection.close();
 }
+@GET
 @Path("/getByRollNumber")
 public Student getByRollNumber(@RequestParameter(key="rollNumber") int rollNumber) throws Exception
 {

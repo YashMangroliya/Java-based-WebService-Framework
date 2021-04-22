@@ -37,6 +37,10 @@
 <param-name>SERVICE_PACKAGE_PRIFIX</param-name>
 <param-value>bobby</param-value>
 </init-param>
+<init-param>
+<param-name>JsFile</param-name>
+<param-value>abcd.js</param-value>
+</init-param>
 </servlet>
 
 <servlet>
