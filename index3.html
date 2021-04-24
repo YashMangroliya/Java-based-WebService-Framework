@@ -4,128 +4,7 @@
 <title>TMWebRock Examples</title>
 <meta charset='utf-8'>
 <script src='jquery/jquery.js'></script>
-<script>
-class Student
-{
-constructor()
-{
-this.rollNumber=0;
-this.name="";
-this.gender='';
-}
-}
-class StudentService
-{
-add(student)
-{
-var prm=new Promise(function(resolve,reject){
-if((student instanceof Student)==false)
-{
-reject("instance of Student class should be passed to add method");
-return;
-}
-var s={
-"rollNumber" : parseInt(student.rollNumber),
-"name" : student.name,
-"gender" : student.gender
-};
-$.post("schoolService/student/add",JSON.stringify(s),function(data){
-if(data.isSuccessful) resolve();
-else reject(data.exception);
-},"json");
-});
-return prm;
-}
-
-
-update(student)
-{
-var prm=new Promise(function(resolve,reject){
-if((student instanceof Student)==false)
-{
-reject("instance of Student class should be passed to add method");
-return;
-}
-var s={
-"rollNumber" : parseInt(student.rollNumber),
-"name" : student.name,
-"gender" : student.gender
-};
-$.post("schoolService/student/update",JSON.stringify(s),function(data){
-if(data.isSuccessful) resolve();
-else reject(data.exception);
-},"json");
-});
-return prm;
-}
-
-delete(formName)
-{
-var prm=new Promise(function(resolve,reject){
-if((Number.isInteger(rollNumber))==false)
-{
-reject("instance of Student class should be passed to add method");
-return;
-}
-$.get("schoolService/student/delete?"+$("#"+formName+"").serialize(),function(data){
-if(data.isSuccessful) resolve();
-else reject(data.exception);
-},"json");
-});
-return prm;
-}
-
-getAll()
-{
-var prm=new Promise(function(resolve,reject){
-$.get("schoolService/student/getAll",function(data,status){
-if(status!="success")
-{
-reject("Some Error Occured");
-return;
-}
-if(data==null)
-{
-reject("Some Error Occured");
-return;
-}
-if(data.isSuccessful==false)
-{
-reject("Some Error Occured");
-return;
-}
-resolve(data.response);
-},"json");
-});
-return prm;
-}
-
-getByRollNumber(rollNumber)
-{
-var prm=new Promise(function(resolve,reject){
-$.get("schoolService/student/getByRollNumber?rollNumber="+rollNumber,function(data,status){
-if(status!="success")
-{
-reject("Some error occured");
-return;
-}
-if(data==null)
-{
-reject("Some error occured");
-return;
-}
-if(data.isSuccessful==false)
-{
-reject(data.exception);
-return;
-}
-resolve(data.response);
-},"json");
-});
-return prm;
-}
-}
-</script>
+<script src='jsFile?name=abcd.js'></script>
 <script>
 function addStudent()
 {
@@ -167,7 +46,7 @@ function deleteStudent()
 {
 var rollNumber=$("#deleteForm input[name=rollNumber]").val();
 var studentService=new StudentService();
-var prm=studentService.delete("deleteForm");
+var prm=studentService.delete(parseInt(rollNumber));
 prm.then(function(){
 alert("Student Deleted.");
 },function(error){
@@ -203,7 +82,7 @@ sno++;
 function getByRollNumber()
 {
 var rollNumber=$("#getByRollNumberForm input[name=rollNumber]").val();
-var prm=new StudentService().getByRollNumber(rollNumber);
+var prm=new StudentService().getByRollNumber(parseInt(rollNumber));
 prm.then(function(data){
 alert("Roll Number: "+data.rollNumber+", Name: "+data.name+", Gender: "+data.gender)},function(error){alert(error)});
 }
