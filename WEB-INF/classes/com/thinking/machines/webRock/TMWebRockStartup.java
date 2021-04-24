@@ -122,6 +122,7 @@ Set<Class> pojoSet=new LinkedHashSet<>();
 File jsFile=new File(getServletContext().getRealPath("/WEB-INF/js/"+getInitParameter("JsFile")));
 if(!jsFile.exists()) jsFile.createNewFile();
 RandomAccessFile randomAccessFile=new RandomAccessFile(jsFile,"rw");
+randomAccessFile.setLength(0);
 Collection<java.lang.String> mappings=null;
 String urlPattern="";
 // to get url-pattern against TMWebRock starts here
@@ -316,20 +317,24 @@ Class val;
 String queryString="";
 int ii=0;
 String keyForQueryString="DEFAULT_VALUE";
+if(numberOfParameters>0)
+{
 for(String key2:keySet)
 {
 keyForQueryString=key2;
-if(ii!=0) queryString+="&";
-ii++;
 if(key2=="__applicationScope" || key2=="__sessionScope" || key2=="__requestScope" || key2=="__applicationDirectory") continue;
 val=requestParameterMap.get(key2);
 if(val.getSimpleName()=="int" || val.getSimpleName()=="Integer")
 {
+if(ii!=0) queryString+="&";
+ii++;
 tmpRandomAccessFile.writeBytes("if((Number.isInteger("+key2+"))==false)\r\n{\r\nreject(\"int should be passed to "+method.getName()+" method\");\r\nreturn;\r\n}\r\n");
 queryString=queryString+key2+"=\"+encodeURI("+key2+")";
 }
 else if(val.getSimpleName()=="String" || val.getSimpleName()=="java.lang.String")
 {
+if(ii!=0) queryString+="&";
+ii++;
 tmpRandomAccessFile.writeBytes("if("+key2+" instanceof String)==false)\r\n{\r\nreject(\"String should be passed to "+method.getName()+" method\");\r\nreturn;\r\n}\r\n");
 queryString=queryString+key2+"=\"+encodeURI("+key2+")";
 }
@@ -340,25 +345,26 @@ tmpRandomAccessFile.writeBytes("if(("+(char)(val.getSimpleName().charAt(0)+32)+v
 tmpRandomAccessFile.writeBytes("reject(\"instance of "+val.getSimpleName()+" class should be passed to "+method.getName()+" method\");\r\nreturn;\r\n}\r\n");
 }
 }
-
+}
 
 if(urlPattern.length()==0)for(String s: mappings) urlPattern=s;
 if(service.getIsGetAllowed())
 {
 // done
-if(queryString.length()!=0)tmpRandomAccessFile.writeBytes("$.get(\""+urlPattern.substring(0,urlPattern.length()-2)+classPathAnnotationValue+methodPathAnnotationValue+"?"+queryString+",function(data,status){\r\n");
-else tmpRandomAccessFile.writeBytes("$.get(\""+urlPattern.substring(0,urlPattern.length()-2)+classPathAnnotationValue+methodPathAnnotationValue+",function(data,status){\r\n");
+if(queryString.length()!=0)tmpRandomAccessFile.writeBytes("$.get(\""+urlPattern.substring(1,urlPattern.length()-2)+classPathAnnotationValue+methodPathAnnotationValue+"?"+queryString+",function(data,status){\r\n");
+else tmpRandomAccessFile.writeBytes("$.get(\""+urlPattern.substring(1,urlPattern.length()-2)+classPathAnnotationValue+methodPathAnnotationValue+"\",function(data,status){\r\n");
 }
 else if(service.getIsPostAllowed())
 {
-tmpRandomAccessFile.writeBytes("$.post(\""+urlPattern.substring(0,urlPattern.length()-2)+classPathAnnotationValue+methodPathAnnotationValue+"\",JSON.stringify("+keyForQueryString+"),function(data,status){\r\n");
+if(queryString.length()==0) tmpRandomAccessFile.writeBytes("$.post(\""+urlPattern.substring(1,urlPattern.length()-2)+classPathAnnotationValue+methodPathAnnotationValue+"\",JSON.stringify("+keyForQueryString+"),function(data,status){\r\n");
+else tmpRandomAccessFile.writeBytes("$.post(\""+urlPattern.substring(1,urlPattern.length()-2)+classPathAnnotationValue+methodPathAnnotationValue+"?"+queryString+",function(data,status){\r\n");
 }
 tmpRandomAccessFile.writeBytes("if(status!=\"success\")\r\n{\r\n");
 tmpRandomAccessFile.writeBytes("reject(\"Some error occured\");\r\nreturn;\r\n}\r\n");
 tmpRandomAccessFile.writeBytes("if(data==null)\r\n{\r\nreject(\"Some error occured\");\r\nreturn;\r\n}\r\n");
 tmpRandomAccessFile.writeBytes("if(data.isSuccessful==false)\r\n{\r\nreject(data.exception);\r\nreturn;\r\n}\r\n");
 tmpRandomAccessFile.writeBytes("resolve(data.response);\r\n");
-tmpRandomAccessFile.writeBytes("},\"json\");\r\n");
+if(service.getIsGetAllowed() || service.getIsPostAllowed())tmpRandomAccessFile.writeBytes("},\"json\");\r\n");
 tmpRandomAccessFile.writeBytes("});\r\nreturn prm;\r\n}\r\n");
 
 

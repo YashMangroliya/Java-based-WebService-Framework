@@ -16,7 +16,7 @@ public Item getItem()
 return this.item;
 }
 */
-//@Forward("/student/add")
+@Forward("/student/add")
 @SecuredAccess(checkPost="bobby.test.Security",guard="guard")
 @Path("/getAllEmployees")
 public String getAllEmployees()

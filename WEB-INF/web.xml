@@ -52,4 +52,14 @@
 <url-pattern>/schoolService/*</url-pattern>
 </servlet-mapping>
 
+<servlet>
+<servlet-name>JsFileServer</servlet-name>
+<servlet-class>com.thinking.machines.webRock.JsFileServer</servlet-class>
+</servlet>
+<servlet-mapping>
+<servlet-name>JsFileServer</servlet-name>
+<url-pattern>/jsFile</url-pattern>
+</servlet-mapping>
+
+
 </web-app>

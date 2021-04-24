@@ -11,6 +11,7 @@ import com.thinking.machines.webRock.annotations.*;
 import com.thinking.machines.webRock.exceptions.*;
 public class TMWebRock extends HttpServlet
 {
+private boolean forwardedFromPost=false;
 
 // implementing all logics on doGet for now, there are no difference between doGet and doPost except checking for METHOD TYPE of request
 public void doGet(HttpServletRequest request,HttpServletResponse response)
@@ -52,10 +53,22 @@ gson=new Gson();
 
 // checking method type of request (GET/POST)
 System.out.println("4");
+if(this.forwardedFromPost==false)
+{
 if(!service.getIsGetAllowed() && service.getIsPostAllowed())
 {
 response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 return;
+}
+}
+else
+{
+this.forwardedFromPost=false;
+if(service.getIsGetAllowed() && !service.getIsPostAllowed())
+{
+response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+return;
+}
 }
 System.out.println("5");
 
@@ -454,6 +467,7 @@ System.out.println("doPost of TMWebRock got called");
 System.out.println("doPost of TMWebRock got called");
 System.out.println("doPost of TMWebRock got called");
 System.out.println("doPost of TMWebRock got called");
+this.forwardedFromPost=true;
 doGet(request,response);
 /*
 try{

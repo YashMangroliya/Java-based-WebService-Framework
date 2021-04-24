@@ -68,9 +68,10 @@ throw new Exception("Student with roll number "+student.getRollNumber()+" does n
 }
 resultSet.close();
 preparedStatement.close();
-preparedStatement=connection.prepareStatement("update Student set name=? where rollNumber=?");
+preparedStatement=connection.prepareStatement("update Student set name=? , gender=? where rollNumber=?");
 preparedStatement.setString(1,student.getName());
-preparedStatement.setInt(2,student.getRollNumber());
+preparedStatement.setString(2,String.valueOf(student.getGender()));
+preparedStatement.setInt(3,student.getRollNumber());
 preparedStatement.executeUpdate();
 preparedStatement.close();
 connection.close();
