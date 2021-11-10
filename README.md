@@ -92,7 +92,7 @@ return "Add model service Used";
 }
 }
 ```
-Example url to access add service http://localhost:8080/"user's-application-context-name"/"user's-entity-name"/employee/add?username=Rahul+Choudhary&gender=male&indian=true To access Boolean data client user must send data as True or TRUE or true and same goes for it counterpart.
+Example url to access add service http://localhost:8080/"user's-application-context-name"/"user's-entity-name"/employee/add?username=Yash+Mangroliya&gender=male&indian=true To access Boolean data client user must send data as True or TRUE or true and same goes for it counterpart.
 
 3.@SecuredAccess(checkPost="com.thinking.machines.secured.Security",guard="securityGuardOne")
 
@@ -227,7 +227,7 @@ public void view(RequestScope rs, SessionScope ss, ApplicationScope as, Applicat
 {
 System.out.println("View Service");
 rs.setAttribute("age",23);
-ss.setAttribute("name","Rahul Choudhary");
+ss.setAttribute("name","Yash Mangroliya");
 as.setAttribute("gender","Male");
 System.out.println(rs.getAttribute("age"));
 System.out.println(ss.getAttribute("name"));
