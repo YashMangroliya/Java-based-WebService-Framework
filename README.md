@@ -3,7 +3,7 @@ Framework makes it easy to create applications and services with absolute minimu
 
 You can use this framework to create backend/serverside services for web requests, Now user not need to know about servlets or edit Web.xml,user can simply use the framework and all its need can be solved.
 
-# Benifits of using this FrameWork:-
+# Benefits of using this FrameWork:-
 1.Absolutely no requirement for XML configuration.
 
 2.No need to write servlets Classes for every new web Request.
