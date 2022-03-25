@@ -191,7 +191,7 @@ public void view(RequestScope rs, SessionScope ss, ApplicationScope as, Applicat
 {
 System.out.println("View Service");
 rs.setAttribute("age",23);
-ss.setAttribute("name","Shivam Maheshwari");
+ss.setAttribute("name","Yash Mangroliya");
 as.setAttribute("gender","Male");
 System.out.println(rs.getAttribute("age"));
 System.out.println(ss.getAttribute("name"));
